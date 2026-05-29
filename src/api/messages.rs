@@ -142,14 +142,14 @@ impl<'a> MessagesClient<'a> {
     }
 
     /// Create a new 1:1 conversation with a user by their MRI.
-    /// Returns the thread ID (e.g. 19:...@thread.v2 or 19:...@unq.gbl.spaces).
-    /// Both the caller and target must be in the members array.
+    /// Uses POST /v1/threads with skypetoken auth.
+    /// Returns the thread ID (e.g. 19:...@unq.gbl.spaces).
     pub async fn create_conversation(
         &self,
         my_mri: &str,
         target_mri: &str,
     ) -> Result<String> {
-        let url = format!("{}/v1/users/ME/conversations", self.chat_service_url);
+        let url = format!("{}/v1/threads", self.chat_service_url);
         let auth = self.auth_header();
 
         let body = serde_json::json!({
@@ -159,6 +159,7 @@ impl<'a> MessagesClient<'a> {
             ],
             "properties": {
                 "threadType": "chat",
+                "chatFilesIndexId": "2",
                 "fixedRoster": "true",
                 "uniquerosterthread": "true"
             }
@@ -175,27 +176,39 @@ impl<'a> MessagesClient<'a> {
             })
             .await?;
 
+        // Try JSON body first for the thread ID
+        let location = resp
+            .headers()
+            .get("location")
+            .and_then(|v| v.to_str().ok())
+            .map(|s| s.to_string());
+
         let data: serde_json::Value =
             resp.json()
                 .await
-                .map_err(|e| crate::error::TeamsError::ApiError {
-                    status: 0,
-                    message: format!("failed to parse create conversation response: {e}"),
-                })?;
+                .unwrap_or_else(|_| serde_json::json!({}));
 
-        // The response contains an "id" field with the thread ID
-        data.get("id")
-            .and_then(|v| v.as_str())
-            .map(|s| s.to_string())
-            .ok_or_else(|| {
-                crate::error::TeamsError::ApiError {
-                    status: 0,
-                    message: format!(
-                        "conversation created but no thread ID in response: {}",
-                        serde_json::to_string(&data).unwrap_or_default()
-                    ),
-                }
-            })
+        // Check JSON id field first
+        if let Some(id) = data.get("id").and_then(|v| v.as_str()) {
+            return Ok(id.to_string());
+        }
+
+        // Fall back to Location header (extract thread ID from last path segment)
+        if let Some(loc) = location {
+            if let Some(thread_id) = loc.rsplit('/').next() {
+                let decoded = urlencoding::decode(thread_id)
+                    .unwrap_or_else(|_| thread_id.to_string().into());
+                return Ok(decoded.to_string());
+            }
+        }
+
+        Err(crate::error::TeamsError::ApiError {
+            status: 0,
+            message: format!(
+                "conversation created but no thread ID in response: {}",
+                serde_json::to_string(&data).unwrap_or_default()
+            ),
+        })
     }
 
     pub async fn unreact(
