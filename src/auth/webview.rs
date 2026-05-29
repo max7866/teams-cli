@@ -97,6 +97,9 @@ fn is_allowed_domain(url: &str) -> bool {
         "teams.microsoft.com",
         "aadcdn.msauth.net",
         "aadcdn.msftauth.net",
+        // Federated identity providers (SSO redirects during OAuth)
+        "sso.godaddy.com",
+        "sso.secureserver.net",
     ];
     if let Ok(parsed) = url::Url::parse(url) {
         if let Some(host) = parsed.host_str() {
