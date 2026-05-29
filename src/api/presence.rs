@@ -49,6 +49,24 @@ impl<'a> PresenceClient<'a> {
         Ok(())
     }
 
+    /// Clear the forced availability override, reverting presence to Offline.
+    /// The forceavailability endpoint only accepts active statuses — to go
+    /// offline, we DELETE the override instead of setting "Offline".
+    pub async fn clear_presence(&self) -> Result<()> {
+        let bearer = self.tokens.skype_bearer();
+
+        self.http
+            .execute_with_retry(|| {
+                self.http
+                    .client
+                    .delete(PRESENCE_URL)
+                    .header("Authorization", &bearer)
+            })
+            .await?;
+
+        Ok(())
+    }
+
     /// Get the current user's presence status.
     pub async fn get_presence(&self) -> Result<PresenceResponse> {
         let url = "https://presence.teams.microsoft.com/v1/me/presence";

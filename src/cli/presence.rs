@@ -57,7 +57,7 @@ pub async fn handle(
         }
         PresenceCommand::Offline => {
             let start = Instant::now();
-            client.set_presence("Offline").await?;
+            client.clear_presence().await?;
             let result = serde_json::json!({"availability": "Offline", "status": "set"});
             output::print_output(format, result, start.elapsed().as_millis() as u64);
         }

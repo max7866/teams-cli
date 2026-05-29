@@ -122,8 +122,20 @@ pub async fn handle_create(
         user_info.mri
     };
 
+    // Get caller's MRI — the API requires both users in the members array
+    let my_email = crate::auth::token::extract_username(&ctx.tokens.teams.raw)
+        .or_else(|_| crate::auth::token::extract_username(&ctx.tokens.skype.raw))?;
+    let mt = MtClient::new(ctx.http, ctx.tokens, ctx.mt_url);
+    let my_user = mt.get_user(&my_email).await?;
+    if my_user.mri.is_empty() {
+        return Err(crate::error::TeamsError::ApiError {
+            status: 0,
+            message: "could not resolve own MRI".into(),
+        });
+    }
+
     let msg_client = MessagesClient::new(ctx.http, ctx.messaging_token, ctx.chat_service_url);
-    let thread_id = msg_client.create_conversation(&mri).await?;
+    let thread_id = msg_client.create_conversation(&my_user.mri, &mri).await?;
 
     let result = serde_json::json!({
         "thread_id": thread_id,

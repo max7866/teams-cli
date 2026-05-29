@@ -143,14 +143,23 @@ impl<'a> MessagesClient<'a> {
 
     /// Create a new 1:1 conversation with a user by their MRI.
     /// Returns the thread ID (e.g. 19:...@thread.v2 or 19:...@unq.gbl.spaces).
-    pub async fn create_conversation(&self, target_mri: &str) -> Result<String> {
+    /// Both the caller and target must be in the members array.
+    pub async fn create_conversation(
+        &self,
+        my_mri: &str,
+        target_mri: &str,
+    ) -> Result<String> {
         let url = format!("{}/v1/users/ME/conversations", self.chat_service_url);
         let auth = self.auth_header();
 
         let body = serde_json::json!({
             "members": [
+                {"id": my_mri, "role": "Admin"},
                 {"id": target_mri, "role": "User"}
-            ]
+            ],
+            "properties": {
+                "threadType": "chat"
+            }
         });
 
         let resp = self
