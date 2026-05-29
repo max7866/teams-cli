@@ -4,6 +4,7 @@ pub mod csa;
 pub mod messages;
 pub mod mt;
 pub mod outlook;
+pub mod presence;
 
 use std::time::Duration;
 

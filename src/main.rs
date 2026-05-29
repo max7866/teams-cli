@@ -160,6 +160,13 @@ async fn run(cli: Cli, format: OutputFormat) -> error::Result<()> {
             let tokens = auth::ensure_outlook_token(profile, &tenant).await?;
             cli::calendar::handle(args, &tokens, &http, format).await
         }
+        // Presence uses the teams token directly (no authz exchange needed)
+        Commands::Presence(args) => {
+            let tenant = cfg.profile(profile).tenant_id.clone();
+            let tokens = auth::get_or_login(profile, &tenant, !cli.no_auto_login).await?;
+            let http = api::HttpClient::new(&network);
+            cli::presence::handle(args, &tokens, &http, format).await
+        }
         // All other commands need auth + authz token exchange
         cmd => {
             let tenant = cfg.profile(profile).tenant_id.clone();

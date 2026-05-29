@@ -133,6 +133,39 @@ Outlook commands use lazy token acquisition. The first time you run a mail or
 calendar command, you'll be prompted to authenticate via device code flow for
 the Outlook API. The token is cached alongside your Teams tokens.
 
+### Presence
+
+```sh
+# Get your current presence status
+teams presence get
+
+# Set presence to online / offline
+teams presence online
+teams presence offline
+
+# Other statuses
+teams presence away
+teams presence busy
+teams presence dnd
+
+# Set a custom availability
+teams presence set BeRightBack
+```
+
+Valid availability values: `Available`, `Busy`, `DoNotDisturb`, `BeRightBack`, `Away`, `Offline`.
+
+#### Scheduling with cron
+
+Automate your presence with crontab (`crontab -e`):
+
+```cron
+# Go online at 9 AM Mon-Fri
+0 9 * * 1-5 /path/to/teams presence online --no-auto-login
+
+# Go offline at 5 PM Mon-Fri
+0 17 * * 1-5 /path/to/teams presence offline --no-auto-login
+```
+
 ### Tenants
 
 ```sh
@@ -267,6 +300,7 @@ dynamically via the authz token exchange:
 - **Chat Service Aggregator (CSA)** -- teams, channels, chats listing
 - **Messages Service** -- message read/write (uses the authz-exchanged Skype token)
 - **MiddleTier (MT)** -- user profiles, tenants, domains
+- **Presence Service** -- presence/availability status (at `presence.teams.microsoft.com`)
 - **Outlook REST API v2.0** -- email and calendar operations (at `outlook.office365.com/api/v2.0`)
 
 Teams commands use the same internal APIs as the official Teams client.

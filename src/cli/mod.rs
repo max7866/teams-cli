@@ -5,6 +5,7 @@ pub mod chat;
 pub mod config_cmd;
 pub mod mail;
 pub mod message;
+pub mod presence;
 pub mod team;
 pub mod tenant;
 pub mod user;
@@ -78,6 +79,8 @@ pub enum Commands {
     Mail(mail::MailArgs),
     /// Calendar operations (Outlook)
     Calendar(calendar::CalendarArgs),
+    /// Presence and availability status
+    Presence(presence::PresenceArgs),
     /// Configuration management
     Config(config_cmd::ConfigArgs),
     /// Generate shell completions
