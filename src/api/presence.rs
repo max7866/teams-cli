@@ -30,7 +30,7 @@ impl<'a> PresenceClient<'a> {
     /// Set the current user's presence/availability.
     /// Valid values: Available, Busy, DoNotDisturb, BeRightBack, Away, Offline
     pub async fn set_presence(&self, availability: &str) -> Result<()> {
-        let bearer = self.tokens.teams_bearer();
+        let bearer = self.tokens.skype_bearer();
         let payload = PresencePayload {
             availability: availability.to_string(),
         };
@@ -52,7 +52,7 @@ impl<'a> PresenceClient<'a> {
     /// Get the current user's presence status.
     pub async fn get_presence(&self) -> Result<PresenceResponse> {
         let url = "https://presence.teams.microsoft.com/v1/me/presence";
-        let bearer = self.tokens.teams_bearer();
+        let bearer = self.tokens.skype_bearer();
 
         let resp = self
             .http

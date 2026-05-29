@@ -141,6 +141,52 @@ impl<'a> MessagesClient<'a> {
         Ok(())
     }
 
+    /// Create a new 1:1 conversation with a user by their MRI.
+    /// Returns the thread ID (e.g. 19:...@thread.v2 or 19:...@unq.gbl.spaces).
+    pub async fn create_conversation(&self, target_mri: &str) -> Result<String> {
+        let url = format!("{}/v1/users/ME/conversations", self.chat_service_url);
+        let auth = self.auth_header();
+
+        let body = serde_json::json!({
+            "members": [
+                {"id": target_mri, "role": "User"}
+            ]
+        });
+
+        let resp = self
+            .http
+            .execute_with_retry(|| {
+                self.http
+                    .client
+                    .post(&url)
+                    .header("Authentication", &auth)
+                    .json(&body)
+            })
+            .await?;
+
+        let data: serde_json::Value =
+            resp.json()
+                .await
+                .map_err(|e| crate::error::TeamsError::ApiError {
+                    status: 0,
+                    message: format!("failed to parse create conversation response: {e}"),
+                })?;
+
+        // The response contains an "id" field with the thread ID
+        data.get("id")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string())
+            .ok_or_else(|| {
+                crate::error::TeamsError::ApiError {
+                    status: 0,
+                    message: format!(
+                        "conversation created but no thread ID in response: {}",
+                        serde_json::to_string(&data).unwrap_or_default()
+                    ),
+                }
+            })
+    }
+
     pub async fn unreact(
         &self,
         conversation_id: &str,

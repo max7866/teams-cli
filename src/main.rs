@@ -185,7 +185,21 @@ async fn run(cli: Cli, format: OutputFormat) -> error::Result<()> {
                 }
                 Commands::Team(args) => cli::team::handle(args, &tokens, &http, format).await,
                 Commands::Channel(args) => cli::channel::handle(args, &tokens, &http, format).await,
-                Commands::Chat(args) => cli::chat::handle(args, &tokens, &http, format).await,
+                Commands::Chat(args) => {
+                    // chat create needs messaging context for conversation creation
+                    if let cli::chat::ChatCommand::Create { ref user } = args.command {
+                        let chat_ctx = cli::chat::ChatContext {
+                            tokens: &tokens,
+                            messaging_token,
+                            http: &http,
+                            chat_service_url,
+                            mt_url,
+                        };
+                        cli::chat::handle_create(user, &chat_ctx, format).await
+                    } else {
+                        cli::chat::handle(args, &tokens, &http, format).await
+                    }
+                }
                 Commands::Message(args) => {
                     let msg_ctx = cli::message::MessageContext {
                         tokens: &tokens,
