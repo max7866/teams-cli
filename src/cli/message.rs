@@ -378,9 +378,9 @@ mod tests {
 
     #[test]
     fn parse_mentions_ignores_non_mri_id() {
-        let input = r#"<at id="0">Dennis Webb</at> hi"#;
+        let input = r#"<at id="0">John Doe</at> hi"#;
         let (content, mentions) = parse_and_rewrite_mentions(input);
-        assert_eq!(content, r#"<at id="0">Dennis Webb</at> hi"#);
+        assert_eq!(content, r#"<at id="0">John Doe</at> hi"#);
         assert!(mentions.is_none());
     }
 
@@ -406,7 +406,7 @@ mod tests {
 
     #[test]
     fn parse_mentions_wraps_in_p_tag() {
-        let input = r#"<at id="8:orgid:abc">Dennis</at> hello"#;
+        let input = r#"<at id="8:orgid:abc">Alice</at> hello"#;
         let (content, _) = parse_and_rewrite_mentions(input);
         assert!(content.starts_with("<p>"));
         assert!(content.ends_with("</p>"));
@@ -414,7 +414,7 @@ mod tests {
 
     #[test]
     fn parse_mentions_preserves_existing_p_tag() {
-        let input = r#"<p><at id="8:orgid:abc">Dennis</at> hello</p>"#;
+        let input = r#"<p><at id="8:orgid:abc">Alice</at> hello</p>"#;
         let (content, _) = parse_and_rewrite_mentions(input);
         // Should not double-wrap
         assert!(!content.starts_with("<p><p>"));

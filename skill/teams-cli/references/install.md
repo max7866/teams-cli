@@ -12,7 +12,7 @@ If missing, build and install from the repo (requires Rust toolchain):
 
 ```sh
 # Clone if needed
-git clone https://github.com/denniswebb/teams-cli.git
+git clone https://github.com/max7866/teams-cli.git
 cd teams-cli
 
 # Build and install

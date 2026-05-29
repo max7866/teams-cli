@@ -4,7 +4,7 @@ version = "0.2.0"
 edition = "2021"
 description = "CLI for Microsoft Teams using Skype/CSA APIs"
 license = "MIT"
-authors = ["Dennis Webb"]
+authors = ["Max Rahimi"]
 
 [[bin]]
 name = "teams"
