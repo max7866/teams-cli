@@ -158,7 +158,9 @@ impl<'a> MessagesClient<'a> {
                 {"id": target_mri, "role": "User"}
             ],
             "properties": {
-                "threadType": "chat"
+                "threadType": "chat",
+                "fixedRoster": "true",
+                "uniquerosterthread": "true"
             }
         });
 

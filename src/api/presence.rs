@@ -53,7 +53,7 @@ impl<'a> PresenceClient<'a> {
     /// The forceavailability endpoint only accepts active statuses — to go
     /// offline, we DELETE the override instead of setting "Offline".
     pub async fn clear_presence(&self) -> Result<()> {
-        let bearer = self.tokens.skype_bearer();
+        let bearer = self.tokens.teams_bearer();
 
         self.http
             .execute_with_retry(|| {

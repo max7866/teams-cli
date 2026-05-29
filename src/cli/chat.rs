@@ -134,8 +134,19 @@ pub async fn handle_create(
         });
     }
 
-    let msg_client = MessagesClient::new(ctx.http, ctx.messaging_token, ctx.chat_service_url);
-    let thread_id = msg_client.create_conversation(&my_user.mri, &mri).await?;
+    // Try CSA endpoint first, fall back to messages API
+    let csa = CsaClient::new(ctx.http, ctx.tokens);
+    let thread_id = match csa.create_chat(&my_user.mri, &mri).await {
+        Ok(id) => id,
+        Err(_) => {
+            tracing::debug!("CSA create_chat failed, falling back to messages API");
+            let msg_client =
+                MessagesClient::new(ctx.http, ctx.messaging_token, ctx.chat_service_url);
+            msg_client
+                .create_conversation(&my_user.mri, &mri)
+                .await?
+        }
+    };
 
     let result = serde_json::json!({
         "thread_id": thread_id,
