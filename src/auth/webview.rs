@@ -6,6 +6,60 @@ use tao::platform::run_return::EventLoopExtRunReturn;
 use tao::window::WindowBuilder;
 use wry::WebViewBuilder;
 
+#[cfg(target_os = "macos")]
+mod macos_menu {
+    use cocoa::appkit::{NSApp, NSApplication, NSMenu, NSMenuItem};
+    use cocoa::base::{nil, selector};
+    use cocoa::foundation::{NSAutoreleasePool, NSString};
+    use objc::runtime::Sel;
+
+    fn menu_item(title: &str, action: Sel, key: &str) -> cocoa::base::id {
+        unsafe {
+            NSMenuItem::alloc(nil).initWithTitle_action_keyEquivalent_(
+                NSString::alloc(nil).init_str(title),
+                action,
+                NSString::alloc(nil).init_str(key),
+            )
+        }
+    }
+
+    /// Create a native Edit menu with Undo, Redo, Cut, Copy, Paste, Select All.
+    /// This enables Cmd+C/V/X/A keyboard shortcuts in the webview.
+    pub fn install_edit_menu() {
+        unsafe {
+            let _pool = NSAutoreleasePool::new(nil);
+            let app = NSApp();
+
+            let menu_bar = NSMenu::new(nil).autorelease();
+
+            // App menu (required placeholder)
+            let app_menu_item = NSMenuItem::new(nil).autorelease();
+            let app_menu = NSMenu::new(nil).autorelease();
+            app_menu_item.setSubmenu_(app_menu);
+            menu_bar.addItem_(app_menu_item);
+
+            // Edit menu
+            let edit_menu_item = NSMenuItem::new(nil).autorelease();
+            let edit_menu = NSMenu::alloc(nil)
+                .initWithTitle_(NSString::alloc(nil).init_str("Edit"))
+                .autorelease();
+
+            edit_menu.addItem_(menu_item("Undo", selector("undo:"), "z"));
+            edit_menu.addItem_(menu_item("Redo", selector("redo:"), "Z"));
+            edit_menu.addItem_(NSMenuItem::separatorItem(nil));
+            edit_menu.addItem_(menu_item("Cut", selector("cut:"), "x"));
+            edit_menu.addItem_(menu_item("Copy", selector("copy:"), "c"));
+            edit_menu.addItem_(menu_item("Paste", selector("paste:"), "v"));
+            edit_menu.addItem_(menu_item("Select All", selector("selectAll:"), "a"));
+
+            edit_menu_item.setSubmenu_(edit_menu);
+            menu_bar.addItem_(edit_menu_item);
+
+            app.setMainMenu_(menu_bar);
+        }
+    }
+}
+
 use super::token::{
     extract_tenant_id, TokenInfo, TokenSet, TokenType, CHATSVCAGG_RESOURCE, MICROSOFT_TENANT_ID,
     OUTLOOK_RESOURCE, REDIRECT_URI, SKYPE_RESOURCE, TEAMS_APP_ID,
@@ -131,6 +185,10 @@ pub fn webview_login(initial_tenant: &str, profile: &str) -> crate::error::Resul
 
     let profile = profile.to_string();
     let result: Arc<Mutex<Option<crate::error::Result<TokenSet>>>> = Arc::new(Mutex::new(None));
+
+    // Install native Edit menu on macOS so Cmd+C/V/X/A work in the webview
+    #[cfg(target_os = "macos")]
+    macos_menu::install_edit_menu();
 
     let mut event_loop = EventLoopBuilder::<String>::with_user_event().build();
     let proxy = event_loop.create_proxy();
